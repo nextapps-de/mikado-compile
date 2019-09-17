@@ -1,0 +1,35 @@
+{
+  "public": true,
+  "name": "mikado-compile",
+  "description": "Web's smartest virtual DOM templating engine.",
+  "homepage": "https://github.com/nextapps-de/mikado/",
+  "author": "Thomas Wilkerling",
+  "copyright": "Nextapps GmbH",
+  "version": "0.0.2",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/nextapps-de/mikado/issues",
+    "email": "info@nextapps.de"
+  },
+  "main": "compile.js",
+  "bin": {
+    "mikado-compile": "./compile.js"
+  },
+  "preferGlobal": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nextapps-de/mikado.git"
+  },
+  "scripts": {
+    "compile": "node compile && echo Compile Complete. && exit 0"
+  },
+  "files": [
+    "compile.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "html2json": "^1.0.2"
+  },
+  "devDependencies": {}
+}
