@@ -147,8 +147,13 @@ function compile(src_name, dest_name, type){
                             }
                             */
 
-                            nodes.child[i].style = nodes.child[i].attr.style.join("");
+                            nodes.child[i].style = nodes.child[i].attr.style;
                             delete nodes.child[i].attr.style;
+
+                            if(typeof nodes.child[i].style === "object"){
+
+                                nodes.child[i].style = nodes.child[i].style.join(" ")
+                            }
                         }
 
                         if(nodes.child[i].attr.if){
