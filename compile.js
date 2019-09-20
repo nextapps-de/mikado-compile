@@ -6,6 +6,39 @@ const { readFileSync, writeFileSync } = require("fs");
 const src_name = process.argv[2];
 let dest_name = process.argv[3];
 
+const event_types = {
+
+    "tap": 1,
+    "change": 1,
+    "click": 1,
+    "dblclick": 1,
+    "input": 1,
+    "keydown": 1,
+    "keypress": 1,
+    "keyup": 1,
+    "mousedown": 1,
+    "mouseenter": 1,
+    "mouseleave": 1,
+    "mousemove": 1,
+    "mouseout": 1,
+    "mouseover": 1,
+    "mouseup": 1,
+    "mousewheel": 1,
+    "touchstart": 1,
+    "touchmove": 1,
+    "touchend": 1,
+    "reset": 1,
+    "select": 1,
+    "submit": 1,
+    "toggle": 1,
+    "blur": 1,
+    "error": 1,
+    "focus": 1,
+    "load": 1,
+    "resize": 1,
+    "scroll": 1
+};
+
 if(src_name){
 
     compile(src_name, dest_name);
@@ -212,12 +245,27 @@ function compile(src_name, dest_name, type){
                         }
                         else{
 
+                            let removes = 0;
+
                             for(let x = 0; x < keys.length; x++){
 
                                 if(typeof nodes.child[i].attr[keys[x]] === "object"){
 
                                     nodes.child[i].attr[keys[x]] = nodes.child[i].attr[keys[x]].join(" ");
                                 }
+
+                                if(event_types[keys[x]]){
+
+                                    nodes.child[i]["event"] || (nodes.child[i]["event"]  = {});
+                                    nodes.child[i]["event"][keys[x]] = nodes.child[i].attr[keys[x]];
+                                    delete nodes.child[i].attr[keys[x]];
+                                    removes++;
+                                }
+                            }
+
+                            if(removes === keys.length){
+
+                                delete nodes.child[i].attr;
                             }
                         }
                     }
@@ -340,6 +388,7 @@ function compile(src_name, dest_name, type){
                .replace(/"css":/g, "\"p\":")
                .replace(/"child":/g, "\"i\":")
                .replace(/"js":/g, "\"j\":")
+               .replace(/"event":/g, "\"e\":")
                .replace(/"include":/g, "\"+\":")
                .replace(/"ref":/g, "\"@\":")
                .replace(/"foreach":/g, "\"r\":")
