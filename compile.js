@@ -348,15 +348,23 @@ function compile(src_name, dest_name, type){
 
                         if(typeof value === "string"){
 
+                            const proxy = value.indexOf("{{=") !== -1;
+
                             if(value.indexOf("{{") !== -1 && value.indexOf("}}") !== -1){
 
-                                const tmp = value.replace(/"{{/g, "")
+                                const tmp = value.replace(/{{=/g, "{{")
+                                                 .replace(/"{{/g, "")
                                                  .replace(/}}"/g, "")
                                                  .replace(/{{/g, "' + ")
                                                  .replace(/}}/g, " + '");
 
                                 root[key] = [("'" + tmp + "'").replace(/'' \+ /g, "")
                                                               .replace(/ \+ ''/g, "")];
+
+                                if(proxy){
+
+                                    root[key].push(1);
+                                }
                             }
                         }
                         else{
