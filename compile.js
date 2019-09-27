@@ -173,12 +173,13 @@ function compile(src_name, dest_name, type){
 
                         if(nodes.child[i].attr.style){
 
-                            /*
-                            const styles = {};
-                            for(let a = 0; a < nodes.child[i].attr.style.length; a+=2){
-                                styles[nodes.child[i].attr.style[a].replace(":", "")] = nodes.child[i].attr.style[a + 1].replace(";", "");
-                            }
-                            */
+                            // const styles = {};
+                            // for(let a = 0; a < nodes.child[i].attr.style.length; a+=2){
+                            //     styles[nodes.child[i].attr.style[a].replace(":", "")] = nodes.child[i].attr.style[a + 1].replace(";", "");
+                            // }
+                            //
+                            // nodes.child[i].style = styles;
+                            // delete nodes.child[i].attr.style;
 
                             nodes.child[i].style = nodes.child[i].attr.style;
                             delete nodes.child[i].attr.style;
@@ -237,6 +238,18 @@ function compile(src_name, dest_name, type){
                             delete nodes.child[i].attr.js;
                         }
 
+                        if(nodes.child[i].attr.bind){
+
+                            if(typeof nodes.child[i].attr.bind !== "string") nodes.child[i].attr.bind = nodes.child[i].attr.bind.join("");
+
+                            const parts = nodes.child[i].attr.bind.split(":");
+                            if(parts.length < 2) parts.unshift("value");
+
+                            nodes.child[i].attr[parts[0]] = "{{==" + parts[1] + "}}";
+                            //nodes.child[i].attr.bind = parts;
+                            //delete nodes.child[i].attr.bind;
+                        }
+
                         const keys = Object.keys(nodes.child[i].attr);
 
                         if(keys.length === 0){
@@ -252,6 +265,12 @@ function compile(src_name, dest_name, type){
                                 if(typeof nodes.child[i].attr[keys[x]] === "object"){
 
                                     nodes.child[i].attr[keys[x]] = nodes.child[i].attr[keys[x]].join(" ");
+                                }
+
+                                if(!event_types[keys[x]] && event_types[keys[x].substring(2)] && (nodes.child[i].attr[keys[x]].indexOf("{{") !== -1)){
+
+                                    event_types[keys[x].substring(2)] = event_types[keys[x]];
+                                    delete event_types[keys[x]];
                                 }
 
                                 if(event_types[keys[x]]){
@@ -325,6 +344,7 @@ function compile(src_name, dest_name, type){
 
     //console.log(html2json(template).child[0].child[1].child[0].text.replace(/\s+/g, ' ').trim());
 
+    let is_static = true;
     let json = remove_non_elemen_nodes(html2json(template));
 
     function create_schema(root){
@@ -348,11 +368,15 @@ function compile(src_name, dest_name, type){
 
                         if(typeof value === "string"){
 
-                            const proxy = value.indexOf("{{=") !== -1;
+                            const bind = value.indexOf("{{==") !== -1;
+                            const proxy = bind || value.indexOf("{{=") !== -1;
 
                             if(value.indexOf("{{") !== -1 && value.indexOf("}}") !== -1){
 
-                                const tmp = value.replace(/{{=/g, "{{")
+                                is_static = false;
+
+                                const tmp = value.replace(/{{==/g, "{{")
+                                                 .replace(/{{=/g, "{{")
                                                  .replace(/"{{/g, "")
                                                  .replace(/}}"/g, "")
                                                  .replace(/{{/g, "' + ")
@@ -361,7 +385,11 @@ function compile(src_name, dest_name, type){
                                 root[key] = [("'" + tmp + "'").replace(/'' \+ /g, "")
                                                               .replace(/ \+ ''/g, "")];
 
-                                if(proxy){
+                                if(bind){
+
+                                    root[key].push(2);
+                                }
+                                else if(proxy){
 
                                     root[key].push(1);
                                 }
@@ -380,6 +408,7 @@ function compile(src_name, dest_name, type){
     if(json) create_schema(json);
     if(json) json = json.child.length ? json.child[0] : json.child;
     if(json){
+        json.static = is_static;
         json.name = template_name;
         json.version = require("./package.json").version;
     }
@@ -387,6 +416,7 @@ function compile(src_name, dest_name, type){
 
     json = json.replace(/"name":/g, "\"n\":")
                .replace(/"version":/g, "\"v\":")
+               .replace(/"static":/g, "\"d\":")
                .replace(/"tag":/g, "\"t\":")
                .replace(/"attr":/g, "\"a\":")
                .replace(/"class":/g, "\"c\":")
@@ -403,6 +433,9 @@ function compile(src_name, dest_name, type){
                .replace(/"max":/g, "\"m\":")
                .replace(/"if":/g, "\"f\":");
     //.replace(/"else":/g, "\"e\":")
+    //.replace(/"bind":/g, "\"b\":")
+    //.replace(/"type":/g, "\"y\":")
+    //.replace(/"value":/g, "\"u\":")
 
     if(!type || (type === "json")) writeFileSync(__dirname + '/../../' + (dest_name || src_name) + '.json', json, 'utf8');
     if(type === "json") return json;
