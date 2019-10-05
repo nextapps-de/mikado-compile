@@ -238,6 +238,12 @@ function compile(src_name, dest_name, type){
                             delete nodes.child[i].attr.js;
                         }
 
+                        if(nodes.child[i].attr.key){
+
+                            nodes.child[i]["key"] = nodes.child[i].attr.key.replace("data.", "");
+                            delete nodes.child[i].attr.key;
+                        }
+
                         if(nodes.child[i].attr.bind){
 
                             if(typeof nodes.child[i].attr.bind !== "string") nodes.child[i].attr.bind = nodes.child[i].attr.bind.join("");
@@ -431,7 +437,8 @@ function compile(src_name, dest_name, type){
                .replace(/"ref":/g, "\"@\":")
                .replace(/"foreach":/g, "\"r\":")
                .replace(/"max":/g, "\"m\":")
-               .replace(/"if":/g, "\"f\":");
+               .replace(/"if":/g, "\"f\":")
+               .replace(/"key":/g, "\"k\":");
     //.replace(/"else":/g, "\"e\":")
     //.replace(/"bind":/g, "\"b\":")
     //.replace(/"type":/g, "\"y\":")
