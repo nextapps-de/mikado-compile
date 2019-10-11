@@ -88,214 +88,260 @@ function compile(src_name, dest_name, type){
 
                     if(nodes.child[i].tag === "include"){
 
+                        // if(nodes.child[i].attr && nodes.child[i].attr.for){
+                        //
+                        //     nodes.child[i].foreach = nodes.child[i].attr.for;
+                        //
+                        //     if(nodes.child[i].attr.max){
+                        //
+                        //         nodes.child[i]["max"] = nodes.child[i].attr.max;
+                        //     }
+                        // }
+
                         if(nodes.child[i].child){
 
                             // <include>{{ template }}</include>
 
-                            nodes.child[i].include = nodes.child[i].child[0].text;
-                            delete nodes.child[i].tag;
-                            delete nodes.child[i].child;
-                            delete nodes.child[i].node;
+                            // if(nodes.child[i].foreach){
+                            //
+                            //     nodes.child[i]["ref"] = nodes.child[i].child[0].text;
+                            // }
+                            // else{
 
-                            continue;
+                                nodes.child[i].include = nodes.child[i].child[0].text;
+                            //}
+
+                            delete nodes.child[i].child;
                         }
                         else{
 
                             // <include from="..."/>
 
-                            if(nodes.child[i].attr.from){
-
-                                nodes.child[i].attr.include = nodes.child[i].attr.from;
-                                delete nodes.child[i].tag;
-                                delete nodes.child[i].attr.from;
-                            }
-                            else{
+                            // if(nodes.child[i].foreach){
+                            //
+                            //     nodes.child[i]["ref"] = nodes.child[i].attr.from;
+                            // }
+                            // else{
 
                                 nodes.child[i].include = nodes.child[i].attr.from;
-                                delete nodes.child[i].tag;
-                                delete nodes.child[i].attr;
-                                delete nodes.child[i].node;
-
-                                continue;
-                            }
+                            //}
                         }
+
+                        delete nodes.child[i].tag;
+                        delete nodes.child[i].attr;
+                        delete nodes.child[i].node;
+
+                        continue;
                     }
 
                     if(nodes.child[i].node === "text"){
 
-                        let text = nodes.child[i].text.replace(/\s+/g, ' ')/*.trim()*/;
+                        delete nodes.child[i].node;
+
+                        let text = nodes.child[i].text.replace(/\s+/g, " ")/*.trim()*/;
 
                         if(text.trim()){
 
                             if(text.indexOf("{{@") !== -1){
 
-                                nodes.js = text.substring(text.indexOf("{{@") + 3, text.indexOf("}}", text.indexOf("{{@")));
-                                text = text.substring(0, text.indexOf("{{@")) + text.substring(text.indexOf("}}", text.indexOf("{{@")) + 2)
-                                /*
-                                nodes.js = text.replace(/{{@/g, "")
-                                               .replace(/}}/g, "");
-                                 */
+                                nodes.child[i].js = text.substring(text.indexOf("{{@") + 3, text.indexOf("}}", text.indexOf("{{@"))).trim();
+                                delete nodes.child[i].text;
+
+                                //nodes.child[i].node = "element";
+                                text = text.substring(0, text.indexOf("{{@")) + text.substring(text.indexOf("}}", text.indexOf("{{@")) + 2);
                             }
 
-                            if(text.indexOf("{{#") !== -1){
+                            if(text.trim()){
 
-                                nodes.html = text.replace(/{{#/g, "{{");
+                                if(text.indexOf("{{#") !== -1){
+
+                                    nodes.child[i].html = text.replace(/{{#/g, "{{");
+                                }
+                                else{
+
+                                    nodes.child[i].text = text;
+                                }
                             }
-                            else{
+                            else if(!nodes.child[i].js){
 
-                                nodes.text = text;
+                                nodes.child.splice(i--, 1);
+                                continue;
                             }
                         }
                         else{
 
-                            delete nodes.child[i].text;
+                            nodes.child.splice(i--, 1);
+                            continue;
                         }
+
+                        if((nodes.child.length === 1) && (!nodes.text || !nodes.child[i].text) && (!nodes.js || !nodes.child[i].js)){
+
+                            if(nodes.child[i].text) nodes.text = nodes.child[i].text;
+                            if(nodes.child[i].js) nodes.js = nodes.child[i].js;
+                            if(nodes.child[i].html) nodes.html = nodes.child[i].html;
+                            nodes.child = [];
+                        }
+
+                        continue;
                     }
+                    else{
 
-                    if(nodes.child[i].tag === "div"){
+                        if(nodes.child[i].tag === "div"){
 
-                        delete nodes.child[i].tag;
-                    }
+                            delete nodes.child[i].tag;
+                        }
 
-                    if(nodes.child[i].attr){
+                        if(nodes.child[i].attr){
 
-                        if(nodes.child[i].attr.class){
+                            if(nodes.child[i].attr.class){
 
-                            nodes.child[i].class = nodes.child[i].attr.class;
+                                nodes.child[i].class = nodes.child[i].attr.class;
 
-                            delete nodes.child[i].attr.class;
+                                delete nodes.child[i].attr.class;
 
-                            if(typeof nodes.child[i].class === "object"){
+                                if(typeof nodes.child[i].class === "object"){
 
-                                nodes.child[i].class = nodes.child[i].class.join(" ")
+                                    nodes.child[i].class = nodes.child[i].class.join(" ")
+                                }
                             }
-                        }
 
-                        if(nodes.child[i].attr.style){
+                            if(nodes.child[i].attr.style){
 
-                            // const styles = {};
-                            // for(let a = 0; a < nodes.child[i].attr.style.length; a+=2){
-                            //     styles[nodes.child[i].attr.style[a].replace(":", "")] = nodes.child[i].attr.style[a + 1].replace(";", "");
-                            // }
+                                // const styles = {};
+                                // for(let a = 0; a < nodes.child[i].attr.style.length; a+=2){
+                                //     styles[nodes.child[i].attr.style[a].replace(":", "")] = nodes.child[i].attr.style[a + 1].replace(";", "");
+                                // }
+                                //
+                                // nodes.child[i].style = styles;
+                                // delete nodes.child[i].attr.style;
+
+                                nodes.child[i].style = nodes.child[i].attr.style;
+                                delete nodes.child[i].attr.style;
+
+                                if(typeof nodes.child[i].style === "object"){
+
+                                    nodes.child[i].style = nodes.child[i].style.join(" ")
+                                }
+                            }
+
+                            if(nodes.child[i].attr.if){
+
+                                nodes.child[i].if = nodes.child[i].attr.if;
+                                if(typeof nodes.child[i].if !== "string") nodes.child[i].if = nodes.child[i].if.join("");
+                                delete nodes.child[i].attr.if;
+                            }
+
+                            // if(typeof nodes.child[i].attr.else !== "undefined"){
                             //
-                            // nodes.child[i].style = styles;
-                            // delete nodes.child[i].attr.style;
+                            //     nodes.child[i].else = nodes.child[i].attr.else;
+                            //     delete nodes.child[i].attr.else;
+                            // }
 
-                            nodes.child[i].style = nodes.child[i].attr.style;
-                            delete nodes.child[i].attr.style;
+                            // looped partial includes:
+                            if(nodes.child[i].attr.include){
 
-                            if(typeof nodes.child[i].style === "object"){
+                                if(nodes.child[i].attr.for){
 
-                                nodes.child[i].style = nodes.child[i].style.join(" ")
-                            }
-                        }
+                                    //nodes.child[i].foreach = nodes.child[i].attr.for;
+                                    nodes.child[i]["ref"] = nodes.child[i].attr.include;
+                                    //delete nodes.child[i].attr.for;
+                                }
+                                else{
 
-                        if(nodes.child[i].attr.if){
+                                    nodes.child[i].child = [{
+                                        node: "element",
+                                        tag: "include",
+                                        attr: {from: nodes.child[i].attr.include}
+                                    }];
+                                    //nodes.child[i].include = nodes.child[i].attr.include;
+                                }
 
-                            nodes.child[i].if = nodes.child[i].attr.if;
-                            if(typeof nodes.child[i].if !== "string") nodes.child[i].if = nodes.child[i].if.join("");
-                            delete nodes.child[i].attr.if;
-                        }
-
-                        // if(typeof nodes.child[i].attr.else !== "undefined"){
-                        //
-                        //     nodes.child[i].else = nodes.child[i].attr.else;
-                        //     delete nodes.child[i].attr.else;
-                        // }
-
-                        // looped partial includes:
-                        if(nodes.child[i].attr.include){
-
-                            if(nodes.child[i].attr.for){
-
-                                nodes.child[i]["ref"] = nodes.child[i].attr.include;
                                 delete nodes.child[i].attr.include;
                             }
-                            else{
 
-                                nodes.child[i].include = nodes.child[i].attr.include;
-                                delete nodes.child[i].attr.include;
-                            }
-                        }
+                            // inline loops:
+                            // TODO: label has "for" attribute
+                            if(nodes.child[i].attr.for && (nodes.child[i].tag !== "label")){
 
-                        // inline loops:
-                        // TODO: label has "for" attribute
-                        if(nodes.child[i].attr.for && (nodes.child[i].tag !== "label")){
-
-                            nodes.child[i].foreach = nodes.child[i].attr.for;
-                            delete nodes.child[i].attr.for;
-                        }
-
-                        if(nodes.child[i].attr.max){
-
-                            nodes.child[i]["max"] = nodes.child[i].attr.max;
-                            delete nodes.child[i].attr.max;
-                        }
-
-                        if(nodes.child[i].attr.js){
-
-                            nodes.child[i]["js"] = nodes.child[i].attr.js.join("");
-                            delete nodes.child[i].attr.js;
-                        }
-
-                        if(nodes.child[i].attr.key){
-
-                            nodes.child[i]["key"] = nodes.child[i].attr.key.replace("data.", "");
-                            delete nodes.child[i].attr.key;
-                        }
-
-                        if(nodes.child[i].attr.bind){
-
-                            if(typeof nodes.child[i].attr.bind !== "string") nodes.child[i].attr.bind = nodes.child[i].attr.bind.join("");
-
-                            const parts = nodes.child[i].attr.bind.split(":");
-                            if(parts.length < 2) parts.unshift("value");
-
-                            nodes.child[i].attr[parts[0]] = "{{==" + parts[1] + "}}";
-                            //nodes.child[i].attr.bind = parts;
-                            //delete nodes.child[i].attr.bind;
-                        }
-
-                        const keys = Object.keys(nodes.child[i].attr);
-
-                        if(keys.length === 0){
-
-                            delete nodes.child[i].attr;
-                        }
-                        else{
-
-                            let removes = 0;
-
-                            for(let x = 0; x < keys.length; x++){
-
-                                if(typeof nodes.child[i].attr[keys[x]] === "object"){
-
-                                    nodes.child[i].attr[keys[x]] = nodes.child[i].attr[keys[x]].join(" ");
-                                }
-
-                                if(!event_types[keys[x]] && event_types[keys[x].substring(2)] && (nodes.child[i].attr[keys[x]].indexOf("{{") !== -1)){
-
-                                    event_types[keys[x].substring(2)] = event_types[keys[x]];
-                                    delete event_types[keys[x]];
-                                }
-
-                                if(event_types[keys[x]]){
-
-                                    nodes.child[i]["event"] || (nodes.child[i]["event"]  = {});
-                                    nodes.child[i]["event"][keys[x]] = nodes.child[i].attr[keys[x]];
-                                    delete nodes.child[i].attr[keys[x]];
-                                    removes++;
-                                }
+                                nodes.child[i].foreach = nodes.child[i].attr.for;
+                                delete nodes.child[i].attr.for;
                             }
 
-                            if(removes === keys.length){
+                            if(nodes.child[i].attr.max){
+
+                                nodes.child[i]["max"] = nodes.child[i].attr.max;
+                                delete nodes.child[i].attr.max;
+                            }
+
+                            let text = nodes.child[i].attr.js;
+
+                            if(text){
+
+                                if(typeof text !== "string") text = text.join(" ");
+
+                                nodes.child[i].js = text.replace(/{{/g, "").replace(/}}/g, "").trim();
+                                delete nodes.child[i].attr.js;
+                            }
+
+                            if(nodes.child[i].attr.key){
+
+                                nodes.child[i]["key"] = nodes.child[i].attr.key.replace("data.", "");
+                                delete nodes.child[i].attr.key;
+                            }
+
+                            if(nodes.child[i].attr.bind){
+
+                                if(typeof nodes.child[i].attr.bind !== "string") nodes.child[i].attr.bind = nodes.child[i].attr.bind.join("");
+
+                                const parts = nodes.child[i].attr.bind.split(":");
+                                if(parts.length < 2) parts.unshift("value");
+
+                                nodes.child[i].attr[parts[0]] = "{{==" + parts[1] + "}}";
+                                //nodes.child[i].attr.bind = parts;
+                                //delete nodes.child[i].attr.bind;
+                            }
+
+                            const keys = Object.keys(nodes.child[i].attr);
+
+                            if(keys.length === 0){
 
                                 delete nodes.child[i].attr;
                             }
+                            else{
+
+                                let removes = 0;
+
+                                for(let x = 0; x < keys.length; x++){
+
+                                    if(typeof nodes.child[i].attr[keys[x]] === "object"){
+
+                                        nodes.child[i].attr[keys[x]] = nodes.child[i].attr[keys[x]].join(" ");
+                                    }
+
+                                    if(!event_types[keys[x]] && event_types[keys[x].substring(2)] && (nodes.child[i].attr[keys[x]].indexOf("{{") !== -1)){
+
+                                        event_types[keys[x].substring(2)] = event_types[keys[x]];
+                                        delete event_types[keys[x]];
+                                    }
+
+                                    if(event_types[keys[x]]){
+
+                                        nodes.child[i]["event"] || (nodes.child[i]["event"] = {});
+                                        nodes.child[i]["event"][keys[x]] = nodes.child[i].attr[keys[x]];
+                                        delete nodes.child[i].attr[keys[x]];
+                                        removes++;
+                                    }
+                                }
+
+                                if(removes === keys.length){
+
+                                    delete nodes.child[i].attr;
+                                }
+                            }
                         }
                     }
 
-                    if(nodes.child[i].node !== "element"){
+                    if(!nodes.child[i].node){
 
                         nodes.child.splice(i, 1);
                         i--;
