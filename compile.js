@@ -379,6 +379,11 @@ function compile(src_name, dest_name, type){
                     delete nodes.for;
                 }
 
+                if(typeof nodes.foreach === "object"){
+
+                    nodes.foreach = nodes.foreach.join(" ")
+                }
+
                 if(nodes.include && nodes.include.length === 1){
 
                     nodes.include = nodes.include[0];

@@ -1,11 +1,11 @@
 {
   "public": true,
   "name": "mikado-compile",
-  "description": "Web's smartest virtual DOM templating engine.",
+  "description": "Template compiler for Mikado.",
   "homepage": "https://github.com/nextapps-de/mikado/",
   "author": "Thomas Wilkerling",
   "copyright": "Nextapps GmbH",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/nextapps-de/mikado/issues",
