@@ -156,6 +156,7 @@ function compile(src_name, dest_name, type){
                                 if(text.indexOf("{{#") !== -1){
 
                                     nodes.child[i].html = text.replace(/{{#/g, "{{");
+                                    delete nodes.child[i].text;
                                 }
                                 else{
 
