@@ -2,6 +2,7 @@
 
 const { html2json } = require("html2json");
 const { readFileSync, writeFileSync } = require("fs");
+const path = require("path");
 
 const src_name = process.argv[2];
 let dest_name = process.argv[3];
@@ -53,7 +54,7 @@ function compile(src_name, dest_name, type){
         return;
     }
 
-    const template = readFileSync(__dirname + '/../../' + src_name, 'utf8').replace(/<!--[\s\S]*?-->/g, "");
+    const template = readFileSync(path.join(__dirname, src_name), 'utf8').replace(/<!--[\s\S]*?-->/g, "");
 
     if(dest_name){
 
