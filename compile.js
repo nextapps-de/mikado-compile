@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 const { html2json } = require("html2json");
-const { readFileSync, writeFileSync } = require("fs");
+const { readFileSync, writeFileSync, existsSync } = require("fs");
 
-const src_name = process.argv[2];
-let dest_name = process.argv[3];
+const src = process.argv[2];
+let dest = process.argv[3];
+const type = process.argv[4];
 
 const event_types = {
 
@@ -39,40 +40,110 @@ const event_types = {
     "scroll": 1
 };
 
-if(src_name){
+if(src){
 
-    compile(src_name, dest_name);
+    compile(src, dest, type);
 }
 
 module.exports = compile;
 
-function compile(src_name, dest_name, type){
+function stdin(query) {
 
-    if(!src_name){
+    const readline = require("readline");
+
+    const rl = readline.createInterface({
+
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    return new Promise(function(resolve){
+
+        rl.question(query, function(ans){
+
+            rl.close();
+            resolve(ans);
+        })
+    });
+}
+
+function create_filename(src, dest){
+
+    if(dest){
+
+        if(dest.lastIndexOf(".") !== -1){
+
+            dest = dest.substring(0, dest.lastIndexOf("."));
+        }
+        else{
+
+            if(src.lastIndexOf("/") !== -1){
+
+                dest += src.substring(src.lastIndexOf("/") + 1, src.lastIndexOf("."));
+            }
+        }
+    }
+    else if(src.lastIndexOf(".") !== -1){
+
+        dest = src.substring(0, src.lastIndexOf("."));
+    }
+
+    return dest;
+}
+
+async function compile(src, dest, type, _recall){
+
+    if(!src){
 
         return;
     }
 
-    const template = readFileSync(__dirname + '/../../' + src_name, 'utf8').replace(/<!--[\s\S]*?-->/g, "");
+    if(type === "module") type = "es6";
+    if(type === "js") type = "es5";
 
-    if(dest_name){
+    if(!_recall){
 
-        if(dest_name.lastIndexOf(".") !== -1){
+        const glob = require("glob");
+        const files = glob.sync(src);
+        const types = type ? type.split(type.indexOf(",") !== 1 ? "," : "|") : ["es6", "es5", "json"];
+        let exist = "";
 
-            dest_name = dest_name.substring(0, dest_name.lastIndexOf("."));
+        for(let i = 0; i < files.length; i++){
+
+            for(let a = 0; a < types.length; a++){
+
+                const type = types[a];
+                const file = create_filename(files[i], dest) + (type === "es6" ? "." + type : "") + ".js";
+
+                if(existsSync(file)){
+
+                    exist += file + "\n"
+                }
+            }
         }
+
+        if(exist){
+
+            const query = await stdin(exist + "\nThese files gets overwritten. Continue? (y/n): ");
+
+            if(query !== "y"){
+
+                return;
+            }
+        }
+
+        for(let a = 0; a < types.length; a++){
+
+            for(let i = 0; i < files.length; i++){
+
+                await compile(files[i], dest, types[a], true);
+            }
+        }
+
+        return;
     }
-    else if(src_name.lastIndexOf(".") !== -1){
 
-        dest_name = src_name.substring(0, src_name.lastIndexOf("."));
-    }
-
-    let template_name = dest_name;
-
-    if(template_name.lastIndexOf("/") !== -1){
-
-        template_name = template_name.substring(template_name.lastIndexOf("/") + 1);
-    }
+    dest = create_filename(src, dest);
 
     function remove_non_elemen_nodes(nodes){
 
@@ -401,6 +472,7 @@ function compile(src_name, dest_name, type){
     }
 
     //console.log(html2json(template).child[0].child[1].child[0].text.replace(/\s+/g, ' ').trim());
+    const template = readFileSync(__dirname + "/../../" + src, "utf8").replace(/<!--[\s\S]*?-->/g, "");
 
     let is_static = true;
     let json = remove_non_elemen_nodes(html2json(template));
@@ -463,6 +535,13 @@ function compile(src_name, dest_name, type){
         }
     }
 
+    let template_name = dest;
+
+    if(template_name.lastIndexOf("/") !== -1){
+
+        template_name = template_name.substring(template_name.lastIndexOf("/") + 1);
+    }
+
     if(json) create_schema(json);
     if(json) json = json.child.length ? json.child[0] : json.child;
     if(json){
@@ -496,7 +575,7 @@ function compile(src_name, dest_name, type){
     //.replace(/"type":/g, "\"y\":")
     //.replace(/"value":/g, "\"u\":")
 
-    if(!type || (type === "json")) writeFileSync(__dirname + '/../../' + (dest_name || src_name) + '.json', json, 'utf8');
+    if(!type || (type === "json")) writeFileSync(__dirname + '/../../' + (dest || src) + '.json', json, 'utf8');
     if(type === "json") return json;
 
     /*
@@ -515,12 +594,10 @@ function compile(src_name, dest_name, type){
     */
 
     const es5 = "Mikado.register(" + json + ");";
-
-    if(!type || (type === "es5")) writeFileSync(__dirname + '/../../' + (dest_name || src_name) + '.js', es5, 'utf8');
+    if(!type || (type === "es5")) writeFileSync(__dirname + '/../../' + (dest || src) + '.js', es5, 'utf8');
     if(type === "es5") return es5;
 
     const es6 = "export default " + json + ";";
-
-    if(!type || (type === "es6")) writeFileSync(__dirname + '/../../' + (dest_name || src_name) + '.es6.js', es6, 'utf8');
+    if(!type || (type === "es6")) writeFileSync(__dirname + '/../../' + (dest || src) + '.es6.js', es6, 'utf8');
     if(type === "es6") return es6;
 }
