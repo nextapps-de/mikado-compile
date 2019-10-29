@@ -513,7 +513,8 @@ async function compile(src, dest, type, _recall){
                                                  .replace(/}}/g, " + '");
 
                                 root[key] = [("'" + tmp + "'").replace(/'' \+ /g, "")
-                                                              .replace(/ \+ ''/g, "")];
+                                                              .replace(/ \+ ''/g, "")
+                                                              .trim()];
 
                                 if(bind){
 
