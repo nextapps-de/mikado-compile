@@ -3,11 +3,12 @@
 const { html2json } = require("html2json");
 const { readFileSync, writeFileSync, existsSync } = require("fs");
 
-const parameter = parse_argv(process.argv, { force: 1, f: 1 });
+const parameter = parse_argv(process.argv, { force: 1, f: 1, pretty: 1, p: 1 });
 const src = parameter.src || parameter.s || parameter[0];
 let dest = parameter.dest || parameter.d || parameter[1];
 const type = parameter.type || parameter.t || parameter[2];
-const force = parameter.force || parameter.f || parameter[3];
+const force = parameter.force || parameter.f;
+const pretty = parameter.pretty || parameter.p;
 
 function parse_argv(argv, flags){
 
@@ -590,7 +591,7 @@ async function compile(src, dest, type, _recall){
         json.name = template_name;
         json.version = require("./package.json").version;
     }
-    if(json) json = type === "json" ? JSON.stringify(json) : JSON.stringify(json, null, 2);
+    if(json) json = pretty ? JSON.stringify(json, null, 2) : JSON.stringify(json);
 
     json = json.replace(/"name":/g, "\"n\":")
                .replace(/"version":/g, "\"v\":")
