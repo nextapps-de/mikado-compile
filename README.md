@@ -38,7 +38,7 @@ Compile files explicitly by using option flag shortcuts:
 npx mikado-compile -s src/tpl/*.html -d dest/tpl/ -t json
 ```
 
-Force overwrite existing files:
+Force overwrite existing files (silent):
 ```cmd
 npx mikado-compile src/tpl/*.html --force
 ```
@@ -46,4 +46,19 @@ npx mikado-compile src/tpl/*.html --force
 Compile as pretty print (non-minified):
 ```cmd
 npx mikado-compile src/tpl/*.html --pretty
+```
+
+### Node Module
+
+You can call the compile function directly:
+```js
+const compile = require("mikado-compile");
+const src = "./src/*.html";
+const dest = "./dist/";
+
+compile(src, dest, {
+    type: ["es5", "es6", "json"],
+    force: true,
+    pretty: false
+});
 ```

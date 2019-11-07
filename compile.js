@@ -1,52 +1,7 @@
-#!/usr/bin/env node
-
 const { html2json } = require("html2json");
 const { readFileSync, writeFileSync, existsSync } = require("fs");
-
-const parameter = parse_argv(process.argv, { force: 1, f: 1, pretty: 1, p: 1 });
-const src = parameter.src || parameter.s || parameter[0];
-let dest = parameter.dest || parameter.d || parameter[1];
-const type = parameter.type || parameter.t || parameter[2];
-const force = parameter.force || parameter.f;
-const pretty = parameter.pretty || parameter.p;
-
-function parse_argv(argv, flags){
-
-    const payload = Object.create(null);
-    let flag = "";
-    let count = 0;
-
-    for(let i = 2; i < argv.length; i++){
-
-        const current = argv[i];
-
-        if(current.indexOf("-") === 0){
-
-            flag = current.replace(/-/g, "");
-
-            if(flags[flag]){
-
-                payload[flag] = true;
-                flag = "";
-            }
-        }
-        else{
-
-            if(flag){
-
-                payload[flag] = current;
-                flag = "";
-            }
-            else{
-
-                payload[count++] = current;
-                payload.length = count;
-            }
-        }
-    }
-
-    return payload;
-}
+const { sync } = require("glob");
+const { resolve } = require("path");
 
 const event_types = {
 
@@ -81,13 +36,6 @@ const event_types = {
     "scroll": 1
 };
 
-if(src){
-
-    compile(src, dest, type);
-}
-
-module.exports = compile;
-
 function stdin(query) {
 
     const readline = require("readline");
@@ -112,7 +60,7 @@ function create_filename(src, dest){
 
     if(dest){
 
-        if(dest.lastIndexOf(".") !== -1){
+        if(dest.lastIndexOf(".") > 0){
 
             dest = dest.substring(0, dest.lastIndexOf("."));
         }
@@ -120,11 +68,11 @@ function create_filename(src, dest){
 
             if(src.lastIndexOf("/") !== -1){
 
-                dest += src.substring(src.lastIndexOf("/") + 1, src.lastIndexOf("."));
+                dest += get_filename(src);
             }
         }
     }
-    else if(src.lastIndexOf(".") !== -1){
+    else if(src.lastIndexOf(".") > 0){
 
         dest = src.substring(0, src.lastIndexOf("."));
     }
@@ -132,21 +80,55 @@ function create_filename(src, dest){
     return dest;
 }
 
-async function compile(src, dest, type, _recall){
+function get_filename(path){
+
+    let tmp;
+
+    if((tmp = path.lastIndexOf("/")) !== -1){
+
+        path = path.substring(tmp + 1);
+    }
+
+    if((tmp = path.lastIndexOf(".")) !== -1){
+
+        path = path.substring(0, tmp);
+    }
+
+    return path;
+}
+
+module.exports = async function compile(src, dest, options, _recall){
 
     if(!src){
 
         return;
     }
 
-    if(type === "module") type = "es6";
-    if(type === "js") type = "es5";
+    options || (options = {});
+
+    let type = options.type;
+    let pretty = options.pretty;
+    let force = options.force;
+    let types;
+
+    if(typeof type !== "object"){
+
+        if(type){
+
+            if(type === "module") type = "es6";
+            if(type === "js") type = "es5";
+
+            types = type.split(type.indexOf(",") !== 1 ? "," : "|");
+        }
+        else{
+
+            types = ["es6", "es5", "json"];
+        }
+    }
 
     if(!_recall){
 
-        const glob = require("glob");
-        const files = glob.sync(src);
-        const types = type ? type.split(type.indexOf(",") !== 1 ? "," : "|") : ["es6", "es5", "json"];
+        const files = sync(src);
         let exist = "";
 
         for(let i = 0; i < files.length; i++){
@@ -154,7 +136,7 @@ async function compile(src, dest, type, _recall){
             for(let a = 0; a < types.length; a++){
 
                 const type = types[a];
-                const file = create_filename(files[i], dest) + (type === "es6" ? "." + type : "") + ".js";
+                const file = create_filename(files[i], dest) + (type === "json" ? ".json" : (type === "es6" ? ".es6" : "") + ".js");
 
                 if(existsSync(file)){
 
@@ -165,10 +147,11 @@ async function compile(src, dest, type, _recall){
 
         if(exist && !force){
 
-            const query = await stdin(exist + "\nThese files gets overwritten. Continue? (y/n): ");
+            const query = await stdin(exist + "\nThe files listed above gets overwritten. Continue? (y/n): ");
 
-            if(query !== "y"){
+            if(query.toLowerCase().trim() !== "y"){
 
+                console.log("Aborted.");
                 return;
             }
         }
@@ -177,9 +160,13 @@ async function compile(src, dest, type, _recall){
 
             for(let i = 0; i < files.length; i++){
 
-                await compile(files[i], dest, types[a], true);
+                options.type = types[a];
+
+                await compile(files[i], dest, options, true);
             }
         }
+
+        console.log("Done.");
 
         return;
     }
@@ -512,8 +499,10 @@ async function compile(src, dest, type, _recall){
         return nodes;
     }
 
+    src = resolve(__dirname + "/../../" + src);
+
     //console.log(html2json(template).child[0].child[1].child[0].text.replace(/\s+/g, ' ').trim());
-    const template = readFileSync(__dirname + "/../../" + src, "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    const template = readFileSync(src, "utf8").replace(/<!--[\s\S]*?-->/g, "");
 
     let is_static = true;
     let json = remove_non_elemen_nodes(html2json(template));
@@ -581,7 +570,7 @@ async function compile(src, dest, type, _recall){
 
     if(template_name.lastIndexOf("/") !== -1){
 
-        template_name = template_name.substring(template_name.lastIndexOf("/") + 1);
+        template_name = template_name.substring(template_name.lastIndexOf("/") + 1) || (dest + get_filename(src));
     }
 
     if(json) create_schema(json);
@@ -617,8 +606,13 @@ async function compile(src, dest, type, _recall){
     //.replace(/"type":/g, "\"y\":")
     //.replace(/"value":/g, "\"u\":")
 
-    if(!type || (type === "json")) writeFileSync(__dirname + '/../../' + (dest || src) + '.json', json, 'utf8');
-    if(type === "json") return json;
+    if(type === "json"){
+
+        dest = resolve(__dirname + '/../../' + dest + '.json');
+        if(!type || (type === "json")) writeFileSync(dest, json, 'utf8');
+        console.log(src + " > " + dest);
+        return json;
+    }
 
     /*
     json = json.replace(/"tag":/g, "tag:")
@@ -635,11 +629,21 @@ async function compile(src, dest, type, _recall){
                .replace(/}}/g, " + \"");
     */
 
-    const es5 = "Mikado.register(" + json + ");";
-    if(!type || (type === "es5")) writeFileSync(__dirname + '/../../' + (dest || src) + '.js', es5, 'utf8');
-    if(type === "es5") return es5;
+    if(type === "es5"){
 
-    const es6 = "export default " + json + ";";
-    if(!type || (type === "es6")) writeFileSync(__dirname + '/../../' + (dest || src) + '.es6.js', es6, 'utf8');
-    if(type === "es6") return es6;
-}
+        const es5 = "Mikado.register(" + json + ");";
+        dest = resolve(__dirname + '/../../' + dest + '.js');
+        if(!type || (type === "es5")) writeFileSync(dest, es5, 'utf8');
+        console.log(src + " > " + dest);
+        return es5;
+    }
+
+    if(type === "es6"){
+
+        const es6 = "export default " + json + ";";
+        dest = resolve(__dirname + '/../../' + dest + '.es6.js');
+        if(!type || (type === "es6")) writeFileSync(dest, es6, 'utf8');
+        console.log(src + " > " + dest);
+        return es6;
+    }
+};
