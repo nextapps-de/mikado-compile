@@ -21,9 +21,14 @@ const options = parse_argv(argv, {
 const src = options._[0] || options.src;
 const dest = options._[1] || options.dest;
 const type = options._[2] || options.type;
+const { force, pretty } = options;
 
-console.log(src, dest, type);
+console.log(src, dest, type, force, pretty);
 
 if (src) {
-  compile(src, dest, options);
+  compile(src, dest, {
+    type,
+    force,
+    pretty
+  });
 }
