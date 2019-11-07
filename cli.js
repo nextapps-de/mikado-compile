@@ -1,57 +1,29 @@
 #!/usr/bin/env node
 
+const parse_argv = require("mri");
 const compile = require("./compile.js");
 
-const parameter = parse_argv(process.argv, { force: 1, f: 1, pretty: 1, p: 1 });
-const src = parameter.src || parameter.s || parameter[0];
-const dest = parameter.dest || parameter.d || parameter[1];
-const type = parameter.type || parameter.t || parameter[2];
-const force = parameter.force || parameter.f;
-const pretty = parameter.pretty || parameter.p;
+const argv = process.argv.slice(2);
+const options = parse_argv(argv, {
+  alias: {
+    s: "src",
+    d: "dest",
+    t: "type",
+    f: "force",
+    p: "pretty"
+  },
+  default: {
+    force: true,
+    pretty: true
+  }
+});
 
-function parse_argv(argv, flags){
+const src = options._[0] || options.src;
+const dest = options._[1] || options.dest;
+const type = options._[2] || options.type;
 
-    const payload = Object.create(null);
-    let flag = "";
-    let count = 0;
+console.log(src, dest, type);
 
-    for(let i = 2; i < argv.length; i++){
-
-        const current = argv[i];
-
-        if(current.indexOf("-") === 0){
-
-            flag = current.replace(/-/g, "");
-
-            if(flags[flag]){
-
-                payload[flag] = true;
-                flag = "";
-            }
-        }
-        else{
-
-            if(flag){
-
-                payload[flag] = current;
-                flag = "";
-            }
-            else{
-
-                payload[count++] = current;
-                payload.length = count;
-            }
-        }
-    }
-
-    return payload;
-}
-
-if(src){
-
-    compile(src, dest, {
-        type: type,
-        force: force,
-        pretty: pretty
-    });
+if (src) {
+  compile(src, dest, options);
 }
