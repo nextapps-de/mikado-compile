@@ -2,6 +2,13 @@
 
 You will find the documentation of Mikado <a href="https://github.com/nextapps-de/mikado">here</a>.
 
+### Install
+
+It is recommended to install the compiler as a non-global dependency to your stack:
+```cmd
+npm install mikado-compile
+```
+
 ### CLI
 
 Compile a source file, takes same directory as destination:
@@ -62,3 +69,14 @@ compile(src, dest, {
     pretty: false
 });
 ```
+
+### File Watcher
+
+Start the file watcher to compile templates automatically when file contents change:
+```cmd
+npx mikado-compile src/tpl/*.html --watch
+```
+
+Press `CTRL + C` to stop the watcher.
+
+__Note:__ Existing files will be overridden by default when running the watcher.
