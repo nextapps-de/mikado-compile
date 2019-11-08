@@ -22,7 +22,7 @@ const options = parse_argv(argv, {
 const src = options._[0] || options.src;
 const dest = options._[1] || options.dest;
 const type = options._[2] || options.type;
-const { force, pretty, watch } = options;
+let { force, pretty, watch } = options;
 
 const compiler = src =>
   compile(src, dest, {
@@ -34,6 +34,7 @@ const compiler = src =>
 const watcher = src => {
   console.info(`Watching: ${src}`);
   fs.watch(src, (eventType, _) => {
+    force = true;
     if (eventType === "change") compiler(src);
   });
 };
@@ -46,7 +47,6 @@ if (srcStats.isDirectory()) {
     if (/\.html$/.test(name)) {
       const relPath = path.join(src, name);
       if (watch) {
-        options.force = true;
         watcher(relPath);
       } else {
         compiler(relPath);
