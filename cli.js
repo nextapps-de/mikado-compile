@@ -16,10 +16,6 @@ const options = parse_argv(argv, {
     f: "force",
     p: "pretty",
     w: "watch"
-  },
-  default: {
-    force: true,
-    pretty: true
   }
 });
 
@@ -42,16 +38,19 @@ const watcher = src => {
   });
 };
 
-if (watch) {
-  const srcStats = fs.statSync(src);
-  if (srcStats.isDirectory()) {
-    list_files(src, name => {
-      // Should Multiple File Extensions be Supported?
-      // https://github.com/nextapps-de/mikado#comming-soon
-      if (/\.html$/.test(name)) {
-        const relPath = path.join(src, name);
+const srcStats = fs.statSync(src);
+if (srcStats.isDirectory()) {
+  list_files(src, name => {
+    // Should Multiple File Extensions be Supported?
+    // https://github.com/nextapps-de/mikado#comming-soon
+    if (/\.html$/.test(name)) {
+      const relPath = path.join(src, name);
+      if (watch) {
+        options.force = true;
         watcher(relPath);
+      } else {
+        compiler(relPath);
       }
-    });
-  } else watcher(src);
-} else if (src) compiler(src);
+    }
+  });
+} else if (srcStats.isFile()) compiler(src);
