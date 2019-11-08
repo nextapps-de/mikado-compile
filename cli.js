@@ -46,8 +46,12 @@ if (watch) {
   const srcStats = fs.statSync(src);
   if (srcStats.isDirectory()) {
     list_files(src, name => {
-      const relPath = path.join(src, name);
-      watcher(relPath);
+      // Should Multiple File Extensions be Supported?
+      // https://github.com/nextapps-de/mikado#comming-soon
+      if (/\.html$/.test(name)) {
+        const relPath = path.join(src, name);
+        watcher(relPath);
+      }
     });
   } else watcher(src);
 } else if (src) compiler(src);
