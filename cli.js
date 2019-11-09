@@ -16,17 +16,13 @@ const options = parse_argv(argv, {
     f: "force",
     p: "pretty",
     w: "watch"
-  },
-  default: {
-    force: true,
-    pretty: true
   }
 });
 
 const src = options._[0] || options.src;
 const dest = options._[1] || options.dest;
 const type = options._[2] || options.type;
-const { force, pretty, watch } = options;
+let { force, pretty, watch } = options;
 
 const compiler = src =>
   compile(src, dest, {
@@ -38,20 +34,23 @@ const compiler = src =>
 const watcher = src => {
   console.info(`Watching: ${src}`);
   fs.watch(src, (eventType, _) => {
+    force = true;
     if (eventType === "change") compiler(src);
   });
 };
 
-if (watch) {
-  const srcStats = fs.statSync(src);
-  if (srcStats.isDirectory()) {
-    list_files(src, name => {
-      // Should Multiple File Extensions be Supported?
-      // https://github.com/nextapps-de/mikado#comming-soon
-      if (/\.html$/.test(name)) {
-        const relPath = path.join(src, name);
+const srcStats = fs.statSync(src);
+if (srcStats.isDirectory()) {
+  list_files(src, name => {
+    // Should Multiple File Extensions be Supported?
+    // https://github.com/nextapps-de/mikado#comming-soon
+    if (/\.html$/.test(name)) {
+      const relPath = path.join(src, name);
+      if (watch) {
         watcher(relPath);
+      } else {
+        compiler(relPath);
       }
-    });
-  } else watcher(src);
-} else if (src) compiler(src);
+    }
+  });
+} else if (srcStats.isFile()) compiler(src);
