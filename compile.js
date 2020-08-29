@@ -15,7 +15,7 @@ const event_types = {
     "keyup": 1,
     "mousedown": 1,
     "mouseenter": 1,
-    "mouseleave": 1,
+    "mouseleave": 1, // TODO: mouseleave event does not bubble
     "mousemove": 1,
     "mouseout": 1,
     "mouseover": 1,
@@ -577,12 +577,12 @@ module.exports = async function compile(src, dest, options, _recall){
     if(json) json = json.child.length ? json.child[0] : json.child;
     if(json){
         json.static = is_static;
-        json.name = template_name;
+        json.n = template_name;
         json.version = require("./package.json").version;
     }
     if(json) json = pretty ? JSON.stringify(json, null, 2) : JSON.stringify(json);
 
-    json = json.replace(/"name":/g, "\"n\":")
+    json = json//.replace(/"name":/g, "\"n\":")
                .replace(/"version":/g, "\"v\":")
                .replace(/"static":/g, "\"d\":")
                .replace(/"tag":/g, "\"t\":")
